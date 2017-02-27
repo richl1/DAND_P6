@@ -24,6 +24,20 @@
         }
     }
 
+    .button_bar {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center
+    }
+
+    .lines_buttons {
+      background-color: rgb(251, 201, 127);
+      padding: 3px;
+      margin: 7px;
+    }
+
+
   </style>
 
     <script type="text/javascript">
@@ -38,14 +52,116 @@
               width = 1400 - margin,
               height = 600 - margin;
 
-          d3.select("body").append("h2").text("US Housing Boom/Bust Cycles ( 1963 - 2016)");
+          d3.select(".main").append("h2").text("US Housing Boom/Bust Cycles ( 1963 - 2016)");
 
-          var svg = d3.select("body")
+          var svg = d3.select(".main")
             .append("svg")
               .attr("width", width + margin)
               .attr("height", height + margin)
             .append('g')
                 .attr('class','chart');
+
+          // Convert the Dimple chart coords to allow mixing d3 and Dimple elements
+          var mindate = new Date(1963,6,1),
+              maxdate = new Date(2016,6,1),
+              xMin = 140,   // pixel ranges found through trial and error
+              xMax = 1260,
+              yMin = 60,
+              yMax = 540;
+
+          var xScale = d3.time.scale()
+            .domain([mindate, maxdate])
+            .range([xMin, xMax]);
+
+          var yScale = d3.scale.linear()
+            .domain([0, 2.0])
+            .range([yMax, yMin]);  // ranges found through trial and error
+
+          var peaks = [new Date(1973,6,1),
+                    new Date(1979,6,1),
+                    new Date(1989,6,1),
+                    new Date(1996,1,1),
+                    new Date(2006,6,1)];
+
+          var bottoms = [new Date(1967,7,1),
+                    new Date(1976,1,1),
+                    new Date(1982,6,1),
+                    new Date(1992,10,1),
+                    new Date(2012,4,1)];
+
+          // Function to draw boom and bust critical lines
+          function drawCritical(date, type) {
+            var color
+            if (type == "peak") {
+              color = "red"
+            } else {
+              color = "green"
+            }
+            var line = d3.select("g")
+              .append("line")
+                .attr("x1", xScale(date))
+                .attr("y1", yMin)
+                .attr("x2", xScale(date))
+                .attr("y2", yMax)
+                .attr("stroke", color)
+                .attr("class", type)
+                .style("stroke-dasharray", ("3, 3"))
+                .style("stroke-opacity", 100);
+            return line
+          }
+          var line
+          for (var i in peaks){
+            line = drawCritical(peaks[i], "peak");
+          }
+          var show_Maxima = true;
+          for (var i in bottoms){
+            line = drawCritical(bottoms[i], "bottom");
+          }
+          var show_Minima = true;
+
+          // Draw Maxima/Minima Buttons
+          var bb_titles = ["MINIMA LINES", "MAXIMA LINES"];
+          var buttons = d3.select(".button_bar")
+                          .selectAll("div")
+                          .data(bb_titles)
+                          .enter()
+                          .append("div")
+                          .text(function(d) {return d;});
+          buttons.attr("class", "lines_buttons");
+
+          buttons.on("click",function(d){})
+
+          function toggleCritical (title) {
+            var opacity = 0
+            if (title == "MINIMA LINES") {
+              debugger;
+              if (show_Minima) {
+                opacity = 0;
+              } else {
+                opacity = 100;
+              }
+              for (var i in bottoms){
+                d3.selectAll(".bottom")
+                  .style("stroke-opacity", opacity);
+              }
+            } else {
+              if (show_Maxima) {
+                opacity = 0;
+              } else {
+                opacity = 100;
+              }
+              for (var i in peaks){
+                d3.selectAll(".peak")
+                  .style("stroke-opacity", opacity);
+              }
+            }
+          };
+
+
+          /*var bullets = ["Boom / Bust cycles follow Min/Max 'SOLD' quantities",
+                          "Bust cylcles start when 'Sold' units exceed the mean"
+                          "Recovery cylcles start when 'Sold' units drop below the mean"
+                          "Current 'Sold' levels are below the 53 year mean"];*/
 
       /*
         Dimple.js Chart construction code
@@ -60,10 +176,10 @@
           x.timeInterval = 5;
           x.fontSize = 15;
           x.title ="DATE"
-          y1.title = "HOUSES FOR SALE AS % OF MEAN";
+          y1.title = "HOUSES FOR SALE AS % OF MEAN x (310K/MONTH)";
           y1.tickFormat = "%";
           y1.fontSize = 15;
-          y2.title = "HOUSES SOLD AS % OF MEAN";
+          y2.title = "HOUSES SOLD AS % OF MEAN x (54K/MONTH)";
           y2.tickFormat = "%";
           y2.fontSize = 15;
           myChart.addSeries("FOR SALE", dimple.plot.line, [x, y1]).lineWeight = 3;
@@ -72,6 +188,9 @@
           myLegend.fontSize = 20;
           myLegend.horizontalPadding = 70;
           myChart.draw();
+
+
+
         };
 
       </script>
@@ -84,5 +203,9 @@
     */
   d3.tsv("rs.tsv", draw);
   </script>
+  <div class="main">
+  </div>
+  <div class="button_bar">
+  </div>
 </body>
 </html>
