@@ -37,6 +37,11 @@
       margin: 7px;
     }
 
+    .lines_buttons_pressed {
+      padding: 3px;
+      margin: 7px;
+      background-color: lightblue
+    }
 
   </style>
 
@@ -52,14 +57,35 @@
               width = 1400 - margin,
               height = 600 - margin;
 
-          d3.select(".main").append("h2").text("US Housing Boom/Bust Cycles ( 1963 - 2016)");
+          var note_interval = 3000
 
-          var svg = d3.select(".main")
-            .append("svg")
-              .attr("width", width + margin)
-              .attr("height", height + margin)
-            .append('g')
-                .attr('class','chart');
+              // arrays for maxima and minima
+          var peaks = [new Date(1973,6,1),
+                    new Date(1979,6,1),
+                    new Date(1989,6,1),
+                    new Date(1996,1,1),
+                    new Date(2006,6,1)];
+
+          var bottoms = [new Date(1967,7,1),
+                    new Date(1976,1,1),
+                    new Date(1982,6,1),
+                    new Date(1992,10,1),
+                    new Date(2012,4,1)];
+
+                    //arrays of dicts for Chart Annotations
+          var annotations = [
+                { 'name' : "'FOR SALE' LAGS 'SOLD'",
+                  'x' : 1053, 'y' : 75, 'anchor' : 'start', 'id' : 'note-0'} ,
+                { 'name' : "MAXIMA ARE ALL ABOVE THE MEAN",
+                  'x' : 400, 'y' : 190, 'anchor' : 'start', 'id' : 'note-1'} ,
+                { 'name' : "MOST MINIMA ARE BELOW THE MEAN",
+                  'x' : 675, 'y' : 400, 'anchor' : 'start', 'id' : 'note-2'} ,
+                { 'name' : "(except here)",
+                  'x' : 400, 'y' : 330, 'anchor' : 'start', 'id' : 'note-3'} ,
+                { 'name' : "CURRENT LEVELS",
+                  'x' : 1185, 'y' : 290, 'anchor' : 'middle', 'id' : 'note-4'} ,
+                { 'name' : "ARE BELOW MEAN",
+                  'x' : 1185, 'y' : 310, 'anchor' : 'middle', 'id' : 'note-5'} ]
 
           // Convert the Dimple chart coords to allow mixing d3 and Dimple elements
           var mindate = new Date(1963,6,1),
@@ -77,20 +103,18 @@
             .domain([0, 2.0])
             .range([yMax, yMin]);  // ranges found through trial and error
 
-          var peaks = [new Date(1973,6,1),
-                    new Date(1979,6,1),
-                    new Date(1989,6,1),
-                    new Date(1996,1,1),
-                    new Date(2006,6,1)];
+          d3.select(".main").append("h2").text("US Housing Boom/Bust Cycles ( 1963 - 2016)");
 
-          var bottoms = [new Date(1967,7,1),
-                    new Date(1976,1,1),
-                    new Date(1982,6,1),
-                    new Date(1992,10,1),
-                    new Date(2012,4,1)];
+          var svg = d3.select(".main")
+            .append("svg")
+              .attr("width", width + margin)
+              .attr("height", height + margin)
+            .append('g')
+                .attr('class','chart');
 
-          // Function to draw boom and bust critical lines
-          function drawCritical(date, type) {
+
+          // Function to bind maxima or minima to ds3 critical lines
+          function drawCritical(date, type, opacity) {
             var color
             if (type == "peak") {
               color = "red"
@@ -106,67 +130,88 @@
                 .attr("stroke", color)
                 .attr("class", type)
                 .style("stroke-dasharray", ("3, 3"))
-                .style("stroke-opacity", 100);
+                .style("stroke-opacity", opacity);
             return line
           }
-          var line
-          for (var i in peaks){
-            line = drawCritical(peaks[i], "peak");
+
+          // Function to draw the maxima lines
+          function drawMaxima(maxima, opacity) {
+            var line
+            for (var i in maxima){
+              line = drawCritical(maxima[i], "peak", opacity);
+            }
+            return line
           }
-          var show_Maxima = true;
-          for (var i in bottoms){
-            line = drawCritical(bottoms[i], "bottom");
+
+          // Function to draw the minima lines
+          function drawMinima(minima, opacity) {
+            var line
+            for (var i in minima){
+              line = drawCritical(minima[i], "bottom", opacity);
+            }
+            return line
           }
-          var show_Minima = true;
 
-          // Draw Maxima/Minima Buttons
-          var bb_titles = ["MINIMA LINES", "MAXIMA LINES"];
-          var buttons = d3.select(".button_bar")
-                          .selectAll("div")
-                          .data(bb_titles)
-                          .enter()
-                          .append("div")
-                          .text(function(d) {return d;});
-          buttons.attr("class", "lines_buttons");
-
-          buttons.on("click",function(d){})
-
-          function toggleCritical (title) {
-            var opacity = 0
-            if (title == "MINIMA LINES") {
-              debugger;
-              if (show_Minima) {
-                opacity = 0;
-              } else {
-                opacity = 100;
-              }
-              for (var i in bottoms){
+          function toggleCritical(lineType) {
+            var opacity
+            if (lineType == "MINIMA LINES") {
+              opacity = d3.select(".bottom")
+                          .style("stroke-opacity")
+              if (opacity == 100) {
                 d3.selectAll(".bottom")
-                  .style("stroke-opacity", opacity);
-              }
-            } else {
-              if (show_Maxima) {
-                opacity = 0;
+                  .style("stroke-opacity", 0)
               } else {
-                opacity = 100;
-              }
-              for (var i in peaks){
-                d3.selectAll(".peak")
-                  .style("stroke-opacity", opacity);
+                d3.selectAll(".bottom")
+                  .style("stroke-opacity", 100)
               }
             }
-          };
+            if (lineType == "MAXIMA LINES") {
+              opacity = d3.select(".peak")
+                          .style("stroke-opacity")
+              if (opacity == 100) {
+                d3.selectAll(".peak")
+                  .style("stroke-opacity", 0)
+              } else {
+                d3.selectAll(".peak")
+                  .style("stroke-opacity", 100)
+                }
+            }
+          }
 
+          // Helper function to swap the class strings
+          function toggle_button_classes(str) {
+            if (str == "lines_buttons") {
+              return "lines_buttons_pressed"
+            } else {
+              return "lines_buttons"
+            }
+          }
 
-          /*var bullets = ["Boom / Bust cycles follow Min/Max 'SOLD' quantities",
-                          "Bust cylcles start when 'Sold' units exceed the mean"
-                          "Recovery cylcles start when 'Sold' units drop below the mean"
-                          "Current 'Sold' levels are below the 53 year mean"];*/
+          function show_note(array, i) {
+            d3.select("." + array[i].id)
+              .style("fill","black")
+          }
+
+          // Draw the Initial Maxima and Minima Lines
+          var line
+          line = drawMaxima(peaks, 0)
+          line = drawMinima(bottoms, 0)
+          // Draw annotations, but keep invisible
+          var notes = d3.select(".chart")
+                        .selectAll("g")
+                        .data(annotations)
+                        .enter()
+                        .append("text")
+                        .attr("x", function(d) {return d.x})
+                        .attr("y", function(d) {return d.y})
+                        .attr("class", function(d) {return d.id})
+                        .text(function(d) {return d.name})
+                        .style("fill", "white")
+                        .attr("text-anchor", function(d) {return d.anchor});
 
       /*
         Dimple.js Chart construction code
       */
-
           var myChart = new dimple.chart(svg, data);
           var x = myChart.addTimeAxis("x", "date");
           var y1 = myChart.addMeasureAxis("y", "forsale_pct")
@@ -189,9 +234,39 @@
           myLegend.horizontalPadding = 70;
           myChart.draw();
 
-
-
-        };
+          // Chart Animation
+          setTimeout(annimation, 3000)  // Wait for line chart animation to complete
+          function annimation(){        // Show each note one at a time
+            var note_idx = 0;
+            var note_interval = setInterval(function() {
+              show_note(annotations, note_idx);
+              note_idx++;
+              if(note_idx >= annotations.length) {
+                  clearInterval(note_interval);
+                  // After Notes are shown,
+                  // Draw Maxima/Minima Buttons
+                  var bb_titles = ["MINIMA LINES", "MAXIMA LINES"];
+                  var buttons = d3.select(".button_bar")
+                                  .selectAll("div")
+                                  .data(bb_titles)
+                                  .enter()
+                                  .append("div")
+                                  .text(function(d) {return d;});
+                  buttons.attr("class", "lines_buttons");
+                  // Add Interaction
+                  //toggle buttons on mouse click
+                  buttons.on("click",function(d) {
+                  var current_class = d3.select(this).attr("class");
+                      d3.select(this)
+                        .transition()
+                        .duration(500)
+                        .attr("class", toggle_button_classes(current_class))
+                      toggleCritical(d);
+                  })
+              };
+            }, 3000 );  //3 second delay between notes
+          };
+      };
 
       </script>
   </head>
