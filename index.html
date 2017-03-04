@@ -25,7 +25,7 @@
     }
 
     .button_bar {
-      width: 100%;
+      width: 1200px;
       display: flex;
       flex-wrap: wrap;
       justify-content: center
@@ -42,6 +42,9 @@
       margin: 7px;
       background-color: lightblue
     }
+    .tick line{
+        visibility:hidden;
+    }
 
   </style>
 
@@ -54,12 +57,12 @@
 
           "use strict";
           var margin = 75,
-              width = 1400 - margin,
-              height = 600 - margin;
+              width = 1200 - margin,
+              height = 500 - margin;
 
-          var note_interval = 3000
+          var note_interval = 3000 // time interval for animation
 
-              // arrays for maxima and minima
+            // arrays for maxima and minima lines
           var peaks = [new Date(1973,6,1),
                     new Date(1979,6,1),
                     new Date(1989,6,1),
@@ -72,28 +75,26 @@
                     new Date(1992,10,1),
                     new Date(2012,4,1)];
 
-                    //arrays of dicts for Chart Annotations
+            //arrays of dicts for Chart Annotations
           var annotations = [
                 { 'name' : "'FOR SALE' LAGS 'SOLD'",
-                  'x' : 1053, 'y' : 75, 'anchor' : 'start', 'id' : 'note-0'} ,
-                { 'name' : "MAXIMA ARE ALL ABOVE THE MEAN",
-                  'x' : 400, 'y' : 190, 'anchor' : 'start', 'id' : 'note-1'} ,
-                { 'name' : "MOST MINIMA ARE BELOW THE MEAN",
-                  'x' : 675, 'y' : 400, 'anchor' : 'start', 'id' : 'note-2'} ,
-                { 'name' : "(except here)",
-                  'x' : 400, 'y' : 330, 'anchor' : 'start', 'id' : 'note-3'} ,
+                  'x' : 890, 'y' : 75, 'anchor' : 'start', 'id' : 'note-0'} ,
+                { 'name' : "MAXIMA ARE ABOVE THE MEAN",
+                  'x' : 300, 'y' : 150, 'anchor' : 'start', 'id' : 'note-1'} ,
+                { 'name' : "MINIMA ARE BELOW THE MEAN",
+                  'x' : 600, 'y' : 350, 'anchor' : 'start', 'id' : 'note-2'} ,
                 { 'name' : "CURRENT LEVELS",
-                  'x' : 1185, 'y' : 290, 'anchor' : 'middle', 'id' : 'note-4'} ,
+                  'x' : 1000, 'y' : 250, 'anchor' : 'middle', 'id' : 'note-4'} ,
                 { 'name' : "ARE BELOW MEAN",
-                  'x' : 1185, 'y' : 310, 'anchor' : 'middle', 'id' : 'note-5'} ]
+                  'x' : 1000, 'y' : 275, 'anchor' : 'middle', 'id' : 'note-5'} ]
 
           // Convert the Dimple chart coords to allow mixing d3 and Dimple elements
           var mindate = new Date(1963,6,1),
               maxdate = new Date(2016,6,1),
-              xMin = 140,   // pixel ranges found through trial and error
-              xMax = 1260,
-              yMin = 60,
-              yMax = 540;
+              xMin = 110,   // pixel ranges found through trial and error
+              xMax = 1080,
+              yMin = 50,
+              yMax = 450;
 
           var xScale = d3.time.scale()
             .domain([mindate, maxdate])
@@ -103,8 +104,20 @@
             .domain([0, 2.0])
             .range([yMax, yMin]);  // ranges found through trial and error
 
-          d3.select(".main").append("h2").text("US Housing Boom/Bust Cycles ( 1963 - 2016)");
+        d3.select(".header")
+            .append("h2")
+            .text("US Housing Boom/Bust Cycles ( 1963 - 2016)")
+            .style("width", "1200px");
 
+        d3.select(".header")
+            .append("p")
+            .text("FOR SALE = the US Monthly houses for sale per month.  SOLD is the actual sold houses per month.")
+            .style("width", "1200px")
+            .append("p")
+            .text("The chart shows the cyclical free market interaction between the supply (FOR SALE) and the satisfied demand (SOLD) metrics.  The FOR SALE units consistently lag the SOLD units.  The maxima and minima points are balanced around the 53 year mean.  These points were calculated using the 1st derivative of SOLD units.  The latest data shows the US is still below the 53 year mean metrics, and a housing bust is not imminent.")
+            .append("p")
+
+            // create mainsvg element for the chart
           var svg = d3.select(".main")
             .append("svg")
               .attr("width", width + margin)
@@ -235,7 +248,7 @@
           myChart.draw();
 
           // Chart Animation
-          setTimeout(annimation, 3000)  // Wait for line chart animation to complete
+          setTimeout(annimation, note_interval)  // Wait for line chart animation to complete
           function annimation(){        // Show each note one at a time
             var note_idx = 0;
             var note_interval = setInterval(function() {
@@ -254,7 +267,7 @@
                                   .text(function(d) {return d;});
                   buttons.attr("class", "lines_buttons");
                   // Add Interaction
-                  //toggle buttons on mouse click
+                  // Toggle buttons on mouse click
                   buttons.on("click",function(d) {
                   var current_class = d3.select(this).attr("class");
                       d3.select(this)
@@ -278,6 +291,8 @@
     */
   d3.tsv("rs.tsv", draw);
   </script>
+  <div class="header">
+  </div>
   <div class="main">
   </div>
   <div class="button_bar">
