@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="http://dimplejs.org/dist/dimple.v2.0.0.min.js"></script>
+
+  <style>
+    h2 {
+      text-align: center;
+    }
+
+    /* Line Animation
+       Adapted from CHRIS COYIER ON FEBRUARY 18, 2014
+       https://css-tricks.com/svg-line-animation-works/ */
+    .dimple-line {
+        stroke-dasharray: 2600;
+        stroke-dashoffset: 2600;
+        animation: dash 5s linear forwards;
+    }
+    @keyframes dash {
+        to {
+            stroke-dashoffset: 0;
+        }
+    }
+
+    .button_bar {
+      width: 1200px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center
+    }
+
+    .lines_buttons {
+      background-color: rgb(251, 201, 127);
+      padding: 3px;
+      margin: 7px;
+    }
+
+    .lines_buttons_pressed {
+      padding: 3px;
+      margin: 7px;
+      background-color: lightblue
+    }
+    .tick line{
+        visibility:hidden;
+    }
+
+  </style>
+
+    <script type="text/javascript">
+      function draw(data) {
+
+      /*
+        D3.js setup code
+      */
+
+          "use strict";
+          var margin = 75,
+              width = 1200 - margin,
+              height = 500 - margin;
+
+          var note_interval = 3000 // time interval for animation
+
+            // arrays for maxima and minima lines
+          var peaks = [new Date(1973,6,1),
+                    new Date(1979,6,1),
+                    new Date(1989,6,1),
+                    new Date(1996,1,1),
+                    new Date(2006,6,1)];
+
+          var bottoms = [new Date(1967,7,1),
+                    new Date(1976,1,1),
+                    new Date(1982,6,1),
+                    new Date(1992,10,1),
+                    new Date(2012,4,1)];
+
+            //arrays of dicts for Chart Annotations
+          var annotations = [
+                { 'name' : "'FOR SALE' LAGS 'SOLD'",
+                  'x' : 890, 'y' : 75, 'anchor' : 'start', 'id' : 'note-0'} ,
+                { 'name' : "MAXIMA ARE ABOVE THE MEAN",
+                  'x' : 300, 'y' : 150, 'anchor' : 'start', 'id' : 'note-1'} ,
+                { 'name' : "MINIMA ARE BELOW THE MEAN",
+                  'x' : 600, 'y' : 350, 'anchor' : 'start', 'id' : 'note-2'} ,
+                { 'name' : "CURRENT LEVELS",
+                  'x' : 1000, 'y' : 250, 'anchor' : 'middle', 'id' : 'note-4'} ,
+                { 'name' : "ARE BELOW MEAN",
+                  'x' : 1000, 'y' : 275, 'anchor' : 'middle', 'id' : 'note-5'} ]
+
+          // Convert the Dimple chart coords to allow mixing d3 and Dimple elements
+          var mindate = new Date(1963,6,1),
+              maxdate = new Date(2016,6,1),
+              xMin = 110,   // pixel ranges found through trial and error
+              xMax = 1080,
+              yMin = 50,
+              yMax = 450;
+
+          var xScale = d3.time.scale()
+            .domain([mindate, maxdate])
+            .range([xMin, xMax]);
+
+          var yScale = d3.scale.linear()
+            .domain([0, 2.0])
+            .range([yMax, yMin]);  // ranges found through trial and error
+
+        d3.select(".header")
+            .append("h2")
+            .text("US Housing Boom/Bust Cycles ( 1963 - 2016)")
+            .style("width", "1200px");
+
+        d3.select(".header")
+            .append("p")
+            .text("FOR SALE = the US Monthly houses for sale per month.  SOLD is the actual sold houses per month.")
+            .style("width", "1200px")
+            .append("p")
+            .text("The chart shows the cyclical free market interaction between the supply (FOR SALE) and the satisfied demand (SOLD) metrics.  The FOR SALE units consistently lag the SOLD units.  The maxima and minima points are balanced around the 53 year mean.  These points were calculated using the 1st derivative of SOLD units.  The latest data shows the US is still below the 53 year mean metrics, and a housing bust is not imminent.")
+            .append("p")
+
+            // create mainsvg element for the chart
+          var svg = d3.select(".main")
+            .append("svg")
+              .attr("width", width + margin)
+              .attr("height", height + margin)
+            .append('g')
+                .attr('class','chart');
+
+
+          // Function to bind maxima or minima to ds3 critical lines
+          function drawCritical(date, type, opacity) {
+            var color
+            if (type == "peak") {
+              color = "red"
+            } else {
+              color = "green"
+            }
+            var line = d3.select("g")
+              .append("line")
+                .attr("x1", xScale(date))
+                .attr("y1", yMin)
+                .attr("x2", xScale(date))
+                .attr("y2", yMax)
+                .attr("stroke", color)
+                .attr("class", type)
+                .style("stroke-dasharray", ("3, 3"))
+                .style("stroke-opacity", opacity);
+            return line
+          }
+
+          // Function to draw the maxima lines
+          function drawMaxima(maxima, opacity) {
+            var line
+            for (var i in maxima){
+              line = drawCritical(maxima[i], "peak", opacity);
+            }
+            return line
+          }
+
+          // Function to draw the minima lines
+          function drawMinima(minima, opacity) {
+            var line
+            for (var i in minima){
+              line = drawCritical(minima[i], "bottom", opacity);
+            }
+            return line
+          }
+
+          function toggleCritical(lineType) {
+            var opacity
+            if (lineType == "MINIMA LINES") {
+              opacity = d3.select(".bottom")
+                          .style("stroke-opacity")
+              if (opacity == 100) {
+                d3.selectAll(".bottom")
+                  .style("stroke-opacity", 0)
+              } else {
+                d3.selectAll(".bottom")
+                  .style("stroke-opacity", 100)
+              }
+            }
+            if (lineType == "MAXIMA LINES") {
+              opacity = d3.select(".peak")
+                          .style("stroke-opacity")
+              if (opacity == 100) {
+                d3.selectAll(".peak")
+                  .style("stroke-opacity", 0)
+              } else {
+                d3.selectAll(".peak")
+                  .style("stroke-opacity", 100)
+                }
+            }
+          }
+
+          // Helper function to swap the class strings
+          function toggle_button_classes(str) {
+            if (str == "lines_buttons") {
+              return "lines_buttons_pressed"
+            } else {
+              return "lines_buttons"
+            }
+          }
+
+          function show_note(array, i) {
+            d3.select("." + array[i].id)
+              .style("fill","black")
+          }
+
+          // Draw the Initial Maxima and Minima Lines
+          var line
+          line = drawMaxima(peaks, 0)
+          line = drawMinima(bottoms, 0)
+          // Draw annotations, but keep invisible
+          var notes = d3.select(".chart")
+                        .selectAll("g")
+                        .data(annotations)
+                        .enter()
+                        .append("text")
+                        .attr("x", function(d) {return d.x})
+                        .attr("y", function(d) {return d.y})
+                        .attr("class", function(d) {return d.id})
+                        .text(function(d) {return d.name})
+                        .style("fill", "white")
+                        .attr("text-anchor", function(d) {return d.anchor});
+
+      /*
+        Dimple.js Chart construction code
+      */
+          var myChart = new dimple.chart(svg, data);
+          var x = myChart.addTimeAxis("x", "date");
+          var y1 = myChart.addMeasureAxis("y", "forsale_pct")
+          var y2 = myChart.addMeasureAxis("y", "sold_pct");
+          x.dateParseFormat = "%Y-%m-%d";
+          x.tickFormat = "%Y";
+          x.timeInterval = 5;
+          x.fontSize = 15;
+          x.title ="DATE"
+          y1.title = "HOUSES FOR SALE AS % OF MEAN x (310K/MONTH)";
+          y1.tickFormat = "%";
+          y1.fontSize = 15;
+          y2.title = "HOUSES SOLD AS % OF MEAN x (54K/MONTH)";
+          y2.tickFormat = "%";
+          y2.fontSize = 15;
+          myChart.addSeries("FOR SALE", dimple.plot.line, [x, y1]).lineWeight = 3;
+          myChart.addSeries("SOLD", dimple.plot.line, [x, y2]).lineWeight = 3;
+          var myLegend = myChart.addLegend(width/2.2, 35, width, height, "left");
+          myLegend.fontSize = 20;
+          myLegend.horizontalPadding = 70;
+          myChart.draw();
+
+          // Chart Animation
+          setTimeout(annimation, note_interval)  // Wait for line chart animation to complete
+          function annimation(){        // Show each note one at a time
+            var note_idx = 0;
+            var note_interval = setInterval(function() {
+              show_note(annotations, note_idx);
+              note_idx++;
+              if(note_idx >= annotations.length) {
+                  clearInterval(note_interval);
+                  // After Notes are shown,
+                  // Draw Maxima/Minima Buttons
+                  var bb_titles = ["MINIMA LINES", "MAXIMA LINES"];
+                  var buttons = d3.select(".button_bar")
+                                  .selectAll("div")
+                                  .data(bb_titles)
+                                  .enter()
+                                  .append("div")
+                                  .text(function(d) {return d;});
+                  buttons.attr("class", "lines_buttons");
+                  // Add Interaction
+                  // Toggle buttons on mouse click
+                  buttons.on("click",function(d) {
+                  var current_class = d3.select(this).attr("class");
+                      d3.select(this)
+                        .transition()
+                        .duration(500)
+                        .attr("class", toggle_button_classes(current_class))
+                      toggleCritical(d);
+                  })
+              };
+            }, 3000 );  //3 second delay between notes
+          };
+      };
+
+      </script>
+  </head>
+<body>
+  <script type="text/javascript">
+  /*
+    Use D3 (not dimple.js) to load the TSV file
+    and pass the contents of it to the draw function
+    */
+  d3.tsv("rs.tsv", draw);
+  </script>
+  <div class="header">
+  </div>
+  <div class="main">
+  </div>
+  <div class="button_bar">
+  </div>
+</body>
+</html>

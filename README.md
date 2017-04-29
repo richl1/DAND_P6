@@ -33,9 +33,9 @@ This chart explores the trends of the US housing market from 1963 - 2016.  After
 ### FUTURE DEVELOPMENT
 I believe the visualization could be improved by allowing the user to scroll / zoom on trends at specific times.  At greater zoom levels, I could remove the smoothing of the "SOLD" data to allows users to see the seasonal variations.  Both these addition would require abandoning the DIMPLE.JS chart and the associates x, y coordinate animations.
 
-### FEEDBACK
+### FEEDBACK/CHANGES
 
-To date I received feedback from only one Udacity member with the following comments:
+__Initial Udacity member feedback:__
 
 1. I would suggest making the chart a bit smaller. It takes up the full width of the page which forces the user to scroll back and forth to see the whole image.
 
@@ -44,6 +44,27 @@ To date I received feedback from only one Udacity member with the following comm
 1. I also recommend removing the grey gridlines. This will make your chart look less messy, especially when the maxima and minima lines are showing.
 
 I incorporated all these changes and re-posted a revised request for feedback.  I requested feedback a total of (4) times starting with my initial sketch and at each major revision / git commit.
+
+__First Udacity Review__ Sumbission feedback / updates __(A version is included in the "1st_submission" subdirectory in the GIT repo.)__: 
+
+- Suggestion 1: ... the length of the text is potentially overwhelming
+
+	- I simplified the title and text as suggested.
+
+- Suggestion 2:  ... Minima and Maxima are mathematical terms, ... Between 1995 and 2005 there seems to be two red lines in a row.... , ... What would definitely help is an 'average' line running parallel to the x-axis at 100%...
+
+	- I renamed the terms to "peaks" amd "valleys".  I added the missing "valley" line.  I added a dashed mean line at 100%.
+
+- Suggestion 3: Do you need two Y-axis if they are both based on %. The label could be "HOUSES FOR SALE/SOLD AS A % OF MEAN" You could then outline the mean values for both somewhere else on the graphic?
+
+	- I removed the Text and ticks from the second Y axis; however, dimple.js requires this axis to be present.
+
+__Second Udacity member feadback__  
+
+- Suggestion: I have one suggestion regarding the MINIMA LINE and the MAXIMA LINE buttons. I notice when I click the button, it changes to blue color, however, the MINIMA LINE is green, the MAXIMA LINE is red. I think it might be more consistent if you change the two button colors when clicked to green and red respectively.
+
+	- Changing ther background colors became distracting.  Instead, I used red/green font colors for each button to correspond to each set of lines.
+
 
 Viewers can review the development steps of the visualization by checking out each git commit and viewing ```index.html``` in a local browser.
 

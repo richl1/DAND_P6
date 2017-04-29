@@ -1,0 +1,205 @@
+---
+title: 'DAND_P6: Data Visualization - Sketch V1'
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Cyclical Trends of the US Housing Market (1963 - 2016)
+
+An initial sketch from my exploratory data analysis showing the US Housing Boom/Bust Cycles.
+
+__Narative: The US Housing market experiences periodic boom / bust cycles.  We are currently still recovering and a imminent bust is unlikely.__
+
+___Proposed Development:___ 
+
+1. Convert to dimple.js
+
+2. The red and green vertical lines represent the Bust and Boom infliction points. Display the chart without these lines
+
+3. Add an animation which adds each line sequentially.
+
+4. Add 'Regional' buttons to view the data for US, NorthEast, MidWest, South, and West.
+
+5. Add interactive time scaling / zooming
+
+6. The "Sold" data as shown is smoothed with 12 month moving average because house sales are cyclical within each year.  However, at a certain zoom level, I will turn off the smoothing to allow the view to see these micro-trends.
+
+7. Clean up the labels, scales and legends
+
+__Any and all feedback is appreciated__
+
+
+
+```{r Install Packages, include=FALSE}
+# Load all of the packages that you end up using
+# in your analysis in this code chunk.
+
+# Notice that the parameter "echo" was set to FALSE for this code chunk.
+# This Dollarsprevents the code from displaying in the knitted HTML output.
+# You should set echo=FALSE for all code chunks in your file.
+
+#install.packages("scales")
+#install.packages('ggplot2', dep = TRUE)
+#install.packages("plyr")
+#install.packages("tidyr")
+#install.packages('alr3')
+#install.packages("gridExtra")
+#install.packages('reshape2')
+#install.packages('GGally')
+#install.packages('memisc')
+#install.packages("readr")
+#install.packages("dtplyr")
+#install.packages("zoo")
+#install.packages("smooth")
+
+
+```
+
+```{r, include=FALSE}
+library(ggplot2)
+library(tidyr)
+library(alr3)
+library(gridExtra)
+library(GGally)
+library(memisc)
+library(reshape2)
+library(readr)
+library(memisc)
+library(dtplyr)
+library(zoo)
+```
+
+```{r, include=FALSE}
+# Load the Data
+setwd("C:/Users/rl1891/version-control/Visualizations/DAND_P6")
+library(readr)
+rs <- read_csv("C:/Users/rl1891/version-control/Visualizations/DAND_P6/rs.txt", 
+    col_types = cols(cat_idx = col_skip(), 
+        date = col_date(format = "%m/%d/%Y"), 
+        dt_idx = col_skip(), geoID = col_factor(levels = c("US", 
+            "NE", "MW", "SO", "WE")), geo_idx = col_skip(), 
+        is_adj = col_skip(), is_adj1 = col_skip(), 
+        prefix = col_skip(), suffix = col_skip(), 
+        variable = col_factor(levels = c("AVERAG_SOLD", 
+            "COMPED_FORSALE", "COMPED_SOLD", 
+            "MEDIAN_SOLD", "MMTHS_FORSALE", 
+            "MONSUP_FORSALE", "NOTSTD_FORSALE", 
+            "NOTSTD_SOLD", "TOTAL_ASOLD", 
+            "TOTAL_FORSALE", "TOTAL_SOLD", 
+            "UNDERC_FORSALE", "UNDERC_SOLD"))))
+
+```
+
+```{r Import Dataset, include=FALSE}
+# Convert Long Format to wide format
+rsl <- dcast(rs, per_idx + date + geoID ~ variable, 
+             fun.aggregate = mean, value.var = "val")
+# rename the variables to more meaningful descriptions
+names(rsl)[names(rsl)=="AVERAG_SOLD"] <- "mean_price_sold"
+names(rsl)[names(rsl)=="COMPED_FORSALE"] <- "completed_houses_forsale"
+names(rsl)[names(rsl)=="COMPED_SOLD"] <- "completed_houses_sold"
+names(rsl)[names(rsl)=="MEDIAN_SOLD"] <- "median_price_sold"
+names(rsl)[names(rsl)=="MMTHS_FORSALE"] <- "median_months_forsale"
+names(rsl)[names(rsl)=="MONSUP_FORSALE"] <- "months_supply"
+names(rsl)[names(rsl)=="TOTAL_ASOLD"] <- "annual_rate_sold"
+names(rsl)[names(rsl)=="NOTSTD_FORSALE"] <- "not_started_forsale"
+names(rsl)[names(rsl)=="NOTSTD_SOLD"] <- "not_started_sold"
+names(rsl)[names(rsl)=="TOTAL_FORSALE"] <- "houses_forsale"
+names(rsl)[names(rsl)=="TOTAL_SOLD"] <- "house_sold"
+names(rsl)[names(rsl)=="UNDERC_FORSALE"] <- "under_construction_forsale"
+names(rsl)[names(rsl)=="UNDERC_SOLD"] <- "under_construction_sold"
+
+# Add year & decade to aid binning
+rsl$year <- as.numeric(format(rsl$date,'%Y'))
+rsl$decade <- round(as.numeric(format(rsl$date,'%Y'))/10)*10
+
+
+
+```
+
+```{r Make Plot, echo=FALSE, message=FALSE, warning=FALSE}
+library(scales)
+library(smooth)
+library(zoo)
+library(Mcomp)
+
+
+# Create a subset of just US values
+rsl_us <- subset(rsl, rsl$geoID == "US")
+
+new <- data.frame(date=rsl_us$date, 
+                  forsale_pct=rsl_us$houses_forsale / mean(rsl_us$houses_forsale), 
+                  sold_pct = ave(rsl_us$house_sold, 
+                                 FUN= function(x) rollmean(x, k=12, 
+                                  fill = NA ))/ mean(as.double(rsl_us$house_sold)))
+
+
+
+rsl3 <- melt(new[,c("date","forsale_pct", "sold_pct")], 
+                id.vars = "date")
+
+cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", 
+                "#0072B2", "#D55E00", "#CC79A7")
+
+a = 1.0
+color1 = "green"
+color2 = "red"
+
+# Create a list of vertical lines for the critcal dates to be added to plots
+p_critcal = list(geom_vline(xintercept = 
+                            as.numeric(as.Date('1/1/1976',format='%m/%d/%Y')),
+                            color = color1, alpha = a),
+                 geom_vline(xintercept = 
+                            as.numeric(as.Date('6/1/1979',format='%m/%d/%Y')),
+                            color = color2, alpha = a), 
+                 geom_vline(xintercept = 
+                            as.numeric(as.Date('6/1/1982',format='%m/%d/%Y')),
+                            color = color1, alpha = a),
+                 geom_vline(xintercept = 
+                            as.numeric(as.Date('6/1/1989',format='%m/%d/%Y')),
+                            color = color2, alpha = a),
+                 geom_vline(xintercept = 
+                            as.numeric(as.Date('10/1/1992',format='%m/%d/%Y')),
+                            color = color1, alpha = a),
+                 geom_vline(xintercept = 
+                            as.numeric(as.Date('1/1/1996',format='%m/%d/%Y')),
+                            color = color2, alpha = a),
+                 geom_vline(xintercept = 
+                            as.numeric(as.Date('1/1/1998',format='%m/%d/%Y')),
+                            color = color1, alpha = a),
+                 geom_vline(xintercept = 
+                            as.numeric(as.Date('6/1/2006',format='%m/%d/%Y')),
+                            color = color2, alpha = a),
+                 geom_vline(xintercept = 
+                            as.numeric(as.Date('4/1/2012',format='%m/%d/%Y')),
+                            color = color1, alpha = a))
+
+plt <- ggplot(rsl3, aes(date, value, color = variable)) + 
+  geom_line(size = 1) + 
+  geom_hline(aes(yintercept=1.0), color="black", linetype="dashed", size=.5) +
+  ylab('Houses: For Sale & Sold Percent of Mean') +
+  labs(color="Legend:") +
+  ggtitle("House ForSale, Sold Percent of Mean by Date (1963-2016)") +
+  scale_x_date(date_breaks = "5 year",
+               labels=date_format("%Y"),
+               limits = as.Date(c('1973-01-01','2016-12-31')))
+plt + p_critcal + theme_bw()
+
+#ggsave("DAND_P6_sketch_v1.pdf")
+
+```
+
+__Dataset Information:__
+
+- url: http://wwww.census.gov/econ/currendata/datasets
+
+- "Economic Measures Time Series Dataset"
+
+
+
+

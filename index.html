@@ -9,6 +9,9 @@
     h2 {
       text-align: center;
     }
+    h4 {
+      text-align: center;
+    }
 
     /* Line Animation
        Adapted from CHRIS COYIER ON FEBRUARY 18, 2014
@@ -40,7 +43,16 @@
     .lines_buttons_pressed {
       padding: 3px;
       margin: 7px;
-      background-color: lightblue
+      background-color: lightgray
+    }
+
+    .valley {
+      color: green;
+    }
+
+    .peak {
+      color: red;
+
     }
     .tick line{
         visibility:hidden;
@@ -63,28 +75,29 @@
           var note_interval = 3000 // time interval for animation
 
             // arrays for maxima and minima lines
-          var peaks = [new Date(1973,6,1),
+          var peaks = [new Date(1974,1,1),
                     new Date(1979,6,1),
                     new Date(1989,6,1),
                     new Date(1996,1,1),
                     new Date(2006,6,1)];
 
-          var bottoms = [new Date(1967,7,1),
+          var bottoms = [new Date(1968,1,1),
                     new Date(1976,1,1),
                     new Date(1982,6,1),
                     new Date(1992,10,1),
+                    new Date(1999,1,1),
                     new Date(2012,4,1)];
 
             //arrays of dicts for Chart Annotations
           var annotations = [
                 { 'name' : "'FOR SALE' LAGS 'SOLD'",
                   'x' : 890, 'y' : 75, 'anchor' : 'start', 'id' : 'note-0'} ,
-                { 'name' : "MAXIMA ARE ABOVE THE MEAN",
+                { 'name' : "PEAKS ARE ABOVE THE MEAN",
                   'x' : 300, 'y' : 150, 'anchor' : 'start', 'id' : 'note-1'} ,
-                { 'name' : "MINIMA ARE BELOW THE MEAN",
+                { 'name' : "VALLEYS ARE BELOW THE MEAN",
                   'x' : 600, 'y' : 350, 'anchor' : 'start', 'id' : 'note-2'} ,
                 { 'name' : "CURRENT LEVELS",
-                  'x' : 1000, 'y' : 250, 'anchor' : 'middle', 'id' : 'note-4'} ,
+                  'x' : 1000, 'y' : 240, 'anchor' : 'middle', 'id' : 'note-4'} ,
                 { 'name' : "ARE BELOW MEAN",
                   'x' : 1000, 'y' : 275, 'anchor' : 'middle', 'id' : 'note-5'} ]
 
@@ -106,16 +119,17 @@
 
         d3.select(".header")
             .append("h2")
-            .text("US Housing Boom/Bust Cycles ( 1963 - 2016)")
+            .text("US Housing Boom/Bust Cycles - Latest data shows a housing bust is not imminent")
             .style("width", "1200px");
 
         d3.select(".header")
-            .append("p")
-            .text("FOR SALE = the US Monthly houses for sale per month.  SOLD is the actual sold houses per month.")
+            .append("h4")
+            .text("FOR SALE LAGS SOLD")
             .style("width", "1200px")
+            .append("h4")
+            .text("The 'PEAKS' and 'VALLEYS' are balanced around the mean.  US remains below the 53 year mean.")
             .append("p")
-            .text("The chart shows the cyclical free market interaction between the supply (FOR SALE) and the satisfied demand (SOLD) metrics.  The FOR SALE units consistently lag the SOLD units.  The maxima and minima points are balanced around the 53 year mean.  These points were calculated using the 1st derivative of SOLD units.  The latest data shows the US is still below the 53 year mean metrics, and a housing bust is not imminent.")
-            .append("p")
+            .text("Mean FOR SALE = 310K per month, Mean SOLD = 54K per month")
 
             // create mainsvg element for the chart
           var svg = d3.select(".main")
@@ -167,7 +181,7 @@
 
           function toggleCritical(lineType) {
             var opacity
-            if (lineType == "MINIMA LINES") {
+            if (lineType == "VALLEYS") {
               opacity = d3.select(".bottom")
                           .style("stroke-opacity")
               if (opacity == 100) {
@@ -178,7 +192,7 @@
                   .style("stroke-opacity", 100)
               }
             }
-            if (lineType == "MAXIMA LINES") {
+            if (lineType == "PEAKS") {
               opacity = d3.select(".peak")
                           .style("stroke-opacity")
               if (opacity == 100) {
@@ -205,6 +219,25 @@
               .style("fill","black")
           }
 
+          var mean_line = d3.select(".chart")
+            .append("line")          // attach a line
+            .style("stroke", "green")  // colour the line
+            .attr("x1", xScale(mindate))
+            .attr("y1", yScale(1.0))
+            .attr("x2", xScale(maxdate))
+            .attr("y2", yScale(1.0))
+            .style("stroke-dasharray", ("5, 5"))
+
+          var lbl = d3.select(".chart")
+            .append("text")
+            .attr("class", "mean")
+            .text("MEAN")
+            .attr("x", 150)
+            .attr("y", yScale(1.05))
+            .attr("text-anchor", "start")
+            .style("fill", "green")
+            .style("stroke-opacity", 100);
+
           // Draw the Initial Maxima and Minima Lines
           var line
           line = drawMaxima(peaks, 0)
@@ -222,6 +255,8 @@
                         .style("fill", "white")
                         .attr("text-anchor", function(d) {return d.anchor});
 
+
+
       /*
         Dimple.js Chart construction code
       */
@@ -233,11 +268,11 @@
           x.tickFormat = "%Y";
           x.timeInterval = 5;
           x.fontSize = 15;
-          x.title ="DATE"
-          y1.title = "HOUSES FOR SALE AS % OF MEAN x (310K/MONTH)";
+          x.title ="YEAR"
+          y1.title = "PERCENT OF MEAN";
           y1.tickFormat = "%";
-          y1.fontSize = 15;
-          y2.title = "HOUSES SOLD AS % OF MEAN x (54K/MONTH)";
+          y1.fontSize = 20;
+          y2.title = "";
           y2.tickFormat = "%";
           y2.fontSize = 15;
           myChart.addSeries("FOR SALE", dimple.plot.line, [x, y1]).lineWeight = 3;
@@ -258,23 +293,51 @@
                   clearInterval(note_interval);
                   // After Notes are shown,
                   // Draw Maxima/Minima Buttons
-                  var bb_titles = ["MINIMA LINES", "MAXIMA LINES"];
+                  var bb_titles = ["VALLEYS", "PEAKS"];
                   var buttons = d3.select(".button_bar")
                                   .selectAll("div")
                                   .data(bb_titles)
                                   .enter()
                                   .append("div")
                                   .text(function(d) {return d;});
+
                   buttons.attr("class", "lines_buttons");
+                  buttons[0][0].setAttribute("class","lines_buttons valley");
+                  buttons[0][1].setAttribute("class","lines_buttons peak");
+
                   // Add Interaction
                   // Toggle buttons on mouse click
                   buttons.on("click",function(d) {
                   var current_class = d3.select(this).attr("class");
+                  if (this.getAttribute("class") == "lines_buttons valley") {
+                    d3.select(this)
+                        .transition()
+                        .duration(500)
+                        .attr("class", "lines_buttons_pressed valley");
+                  }
+                  else if 
+                    (this.getAttribute("class") == "lines_buttons_pressed valley"){
                       d3.select(this)
                         .transition()
                         .duration(500)
-                        .attr("class", toggle_button_classes(current_class))
-                      toggleCritical(d);
+                        .attr("class", "lines_buttons valley");
+                  }
+                  else if 
+                    (this.getAttribute("class") == "lines_buttons peak"){
+                      d3.select(this)
+                        .transition()
+                        .duration(500)
+                        .attr("class", "lines_buttons_pressed peak");
+                  }
+                  else if 
+                    (this.getAttribute("class") == "lines_buttons_pressed peak"){
+                      d3.select(this)
+                        .transition()
+                        .duration(500)
+                        .attr("class", "lines_buttons peak");
+                  }
+                  // Show or Hide the Critical lines
+                  toggleCritical(d);     
                   })
               };
             }, 3000 );  //3 second delay between notes
